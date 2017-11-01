@@ -1,5 +1,7 @@
 package com.qq.vip.singleangel.connectwithwifip2p.ClassDefind;
 
+import com.qq.vip.singleangel.connectwithwifip2p.DebugTool.MyLog;
+
 import java.util.Date;
 
 /**
@@ -7,6 +9,9 @@ import java.util.Date;
  * 节点在WIFI P2P中的信息
  */
 public class Device {
+
+    private final static String TAG = "Device";
+
     private int deviceID;           //设备的ID号
     private boolean isConnected;    //是否连接标志位
     private boolean isGroupOwner;   //是否是GO标志位
@@ -25,7 +30,9 @@ public class Device {
      * @param macAdd
      */
     public Device(String macAdd){
-        this.deviceID = HashWithMAC(macAdd);
+        if (checkHash(HashWithMAC(macAdd))){
+            this.deviceID = HashWithMAC(macAdd);
+        }
         this.isConnected = NOT_CONNECTED;
         this.isGroupOwner = NOT_GROUPOWNER;
         this.deviceName = NULL_STRING;
@@ -43,7 +50,9 @@ public class Device {
      */
     public Device(int deviceID, boolean isConnected, boolean isGroupOwner,
                   String deviceName, String macAdd){
-        this.deviceID = HashWithMAC(macAdd);
+        if (checkHash(HashWithMAC(macAdd))){
+            this.deviceID = HashWithMAC(macAdd);
+        }
         this.isConnected = isConnected;
         this.isGroupOwner = isGroupOwner;
         this.deviceName = deviceName;
@@ -62,7 +71,9 @@ public class Device {
      */
     public Device(int deviceID, boolean isConnected, boolean isGroupOwner,
                   String deviceName, String macAdd, String ipAdd){
-        this.deviceID = HashWithMAC(macAdd);
+        if (checkHash(HashWithMAC(macAdd))){
+            this.deviceID = HashWithMAC(macAdd);
+        }
         this.isConnected = isConnected;
         this.isGroupOwner = isGroupOwner;
         this.deviceName = deviceName;
@@ -107,10 +118,21 @@ public class Device {
         return hash;
     }
 
-   public void setDeviceID(String macAdd){
-       if (HashWithMAC(macAdd) == 0){
+    public boolean checkHash(int zero){
+        if (0 == zero){   //生成的hash出错
+            MyLog.debug(TAG, "Hash is going wrong.");
+            return false;
+        }else {
+            return true;
+        }
+    }
 
-       }else {
+    /**
+     * 设置参数函数
+     * @param macAdd
+     */
+    public void setDeviceID(String macAdd){
+       if (checkHash(HashWithMAC(macAdd))){
            this.deviceID = HashWithMAC(macAdd);
        }
    }
@@ -120,5 +142,39 @@ public class Device {
     public void setGroupOwner(boolean isGroupOwner){
         this.isGroupOwner = isGroupOwner;
     }
+    public void setDeviceName(String deviceName){
+        this.deviceName = deviceName;
+    }
+    public void setMacAdd(String macAdd){
+        this.macAdd = macAdd;
+    }
+    public void setIpAdd(String ipAdd){
+        this.ipAdd = ipAdd;
+    }
+
+    /**
+     * 得到参数函数
+     * @return
+     */
+    public int getDeviceID(){
+        return this.deviceID;
+    }
+    public boolean isConnected(){
+        return this.isConnected;
+    }
+    public boolean isGroupOwner(){
+        return this.isGroupOwner;
+    }
+    public String getDeviceName(){
+        return this.deviceName;
+    }
+    public String getMacAdd(){
+        return this.macAdd;
+    }
+    public String getIpAdd(){
+        return this.ipAdd;
+    }
+
+
 
 }
