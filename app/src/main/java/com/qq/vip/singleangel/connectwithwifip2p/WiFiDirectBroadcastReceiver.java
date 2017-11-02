@@ -10,6 +10,8 @@ import android.net.wifi.p2p.WifiP2pGroup;
 import android.net.wifi.p2p.WifiP2pInfo;
 import android.net.wifi.p2p.WifiP2pManager;
 
+import com.qq.vip.singleangel.connectwithwifip2p.ClassDefind.Device;
+
 import java.net.InetAddress;
 import java.util.Collection;
 
@@ -114,6 +116,8 @@ public class WiFiDirectBroadcastReceiver extends BroadcastReceiver{
                 boolean isGroupOwner = device.isGroupOwner();  //该节点是否为GO
                 String deviceAddress = device.deviceAddress;  //该节点的mac地址
                 int deviceStatus = device.status;
+                Device thisDevice = new Device(deviceAddress);
+
 
             }
 

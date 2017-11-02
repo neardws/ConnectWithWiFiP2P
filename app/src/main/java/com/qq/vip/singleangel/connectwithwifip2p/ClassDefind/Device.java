@@ -87,7 +87,7 @@ public class Device {
      * @param macAdd
      * @return
      */
-    public int HashWithMAC(String macAdd){
+    public static int HashWithMAC(String macAdd){
         String removeString = macAdd.replace(":","");
         /**
          * 格式检查
