@@ -114,79 +114,196 @@ public class WiFiP2PService extends Service implements WifiP2pManager.ChannelLis
 
     /**
      * WIFI P2P 相关操作函数，Discover、Connect
+     */
+    /**
+     * discoverStarted = false 意味着discover过程结束或者未开始
+     * discoverStarted = true 意味着discover过程开始但是未结束
+     * connectStarted 同上
+     */
+    private boolean discoverStarted = DISCOVER_NOT_STARTED;
+    private boolean connectStarted = CONNECT_NOT_STARTED;
+
+    private final static boolean DISCOVER_STARTED = true;
+    private final static boolean DISCOVER_NOT_STARTED = false;
+    private final static boolean CONNECT_STARTED = true;
+    private final static boolean CONNECT_NOT_STARTED = false;
+
+
+    /**
+     * 发现函数，执行前提条件，检查Wifi开启情况
      * @param channel
      */
-    
-
     public void discoverPeers(WifiP2pManager.Channel channel){
-        manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                MyLog.debug(TAG, "Discover Peers success.");
-                device.setDiscover(Device.DISCOVERED);
-            }
+        if (discoverStarted == DISCOVER_NOT_STARTED){ //未启动发现过程
+            discoverStarted = DISCOVER_STARTED;    //设置标志位已启动发现
+            /**
+             * 因为之前可能有过发现过程
+             * 我们将Peer列表进行重置
+             */
+            peersArrayList.clear();  //重置ArrayList
+            manager.discoverPeers(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    MyLog.debug(TAG, "Discover Peers success.");
+                    device.setDiscover(Device.DISCOVERED);          //这次发现过程结果是成功的
+                    discoverStarted = DISCOVER_NOT_STARTED;         //设置标志位发现过程以结束
+                }
 
-            @Override
-            public void onFailure(int reason) {
-                MyLog.debug(TAG, "Discover Peers failed.");
-                device.setDiscover(Device.NOT_DISCOVERED);
-            }
-        });
+                @Override
+                public void onFailure(int reason) {
+                    MyLog.debug(TAG, "Discover Peers failed.");
+                    device.setDiscover(Device.NOT_DISCOVERED);   //这次发现过程结果是失败的
+                    discoverStarted = DISCOVER_NOT_STARTED;     //设置标志位发现过程以结束
+                }
+            });
+        }else if (discoverStarted == DISCOVER_STARTED){
+            /**
+             * 防止已有一个发现过程启动的情况下，再次执行可能会导致错误
+             * 发现过程已启动，先运行停止发现过程，再启动该操作
+             */
+            stopDiscoverPeers(channel);
+            discoverPeers(channel); //调用本身
+        }else {
+            MyLog.debug(TAG, "DiscoverPeers else part.");
+        }
     }
 
+    /**
+     * 停止发现过程
+     * @param channel
+     */
     public void stopDiscoverPeers(WifiP2pManager.Channel channel){
-        manager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                /**
-                 * 停止Discover Peers成功意味着
-                 * 节点的状态为NOT_Discover
-                 */
-                MyLog.debug(TAG, "STOP Discover Peers success.");
-                device.setDiscover(Device.NOT_DISCOVERED);
-            }
+        /**
+         * 发现过程正在进行
+         */
+        if (discoverStarted == DISCOVER_STARTED){
+            manager.stopPeerDiscovery(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    /**
+                     * 这里值得注意的是Device中的discover信息只代表着上一次的discover过程的结果
+                     * 成功的话就是Device.DISCOVERED
+                     * 失败的话就是Device.NOT_DISCOVERED
+                     */
+                    MyLog.debug(TAG, "STOP Discover Peers success.");
+                    //device.setDiscover(Device.NOT_DISCOVERED);
+                }
 
-            @Override
-            public void onFailure(int reason) {
-                MyLog.debug(TAG, "STOP Discover Peers failed.");
-                device.setDiscover(Device.DISCOVERED);
-            }
-        });
+                @Override
+                public void onFailure(int reason) {
+                    MyLog.debug(TAG, "STOP Discover Peers failed.");
+                    //device.setDiscover(Device.DISCOVERED);
+                }
+            });
+        }else if (discoverStarted == DISCOVER_NOT_STARTED){ //发现没有启动，故不需要禁止
+            MyLog.debug(TAG, "Stop Discover peers second part, do nothing.");
+        }else {
+            MyLog.debug(TAG, "Stop Discover peers third part.");
+        }
     }
 
+    /**
+     * 连接函数，前提条件，未连接
+     * 检查上一次发现过程的结果，即是否成功
+     * 如果成功，即device.isDiscover = Device.DISCOVERED
+     * 那么意味着获得了Peer列表，并且连接对象应该在Peer列表中
+     * @param config
+     */
     public void connect(WifiP2pConfig config){
-        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
-                MyLog.debug(TAG, "Connect success.");
-                device.setConnected(Device.CONNECTED);
-            }
+        /**
+         * 没有连接过程正在执行
+         */
+        if (connectStarted == CONNECT_NOT_STARTED){
+            /**
+             * 未连接的状态
+             */
+            connectStarted = CONNECT_STARTED; //节点现在开始连接过程
+            if (Device.NOT_CONNECTED == device.isConnected()){
+                /**
+                 * 该节点发现成功并且未连接，最好情况
+                 */
+                if (Device.DISCOVERED == device.isDiscover()){
+                    /**
+                     * 要连接的节点在该节点的邻居节点列表中，即可连接，config参数正确
+                     */
+                    if (isInPeers(config.deviceAddress)){
+                        manager.connect(channel, config, new WifiP2pManager.ActionListener() {
+                            @Override
+                            public void onSuccess() {
+                                MyLog.debug(TAG, "Connect success.");
+                                device.setConnected(Device.CONNECTED);
+                                connectStarted = CONNECT_NOT_STARTED;
+                            }
 
-            @Override
-            public void onFailure(int reason) {
-                MyLog.debug(TAG, "Connect failed.");
-                device.setConnected(Device.NOT_CONNECTED);
+                            @Override
+                            public void onFailure(int reason) {
+                                MyLog.debug(TAG, "Connect failed.");
+                                device.setConnected(Device.NOT_CONNECTED);
+                                connectStarted = CONNECT_NOT_STARTED;
+                            }
+                        });
+                    }else {
+                        connectStarted = CONNECT_NOT_STARTED;
+                        MyLog.debug(TAG, "Connect error config ,the mac address is error");
+                    }
+
+                }else if (Device.NOT_DISCOVERED == device.isDiscover()){
+                    /**
+                     * 该节点上一次发现失败，即没有邻居节点列表信息，那么我们需要将
+                     * 在连接前重新发现一次,之后再重试
+                     */
+                    MyLog.debug(TAG, "Connect need correct config, try later.");
+                    discoverPeers(channel);
+                    connectStarted = CONNECT_NOT_STARTED;
+                }else {
+                    MyLog.debug(TAG, "Connect Third IF loop third part.");
+                    connectStarted = CONNECT_NOT_STARTED;
+                }
+
+            }else if (Device.CONNECTED == device.isConnected()){
+                /**
+                 * 已成功连接，断开之后再连
+                 */
+                disConnect();
+                connect(config);
+            }else {
+                connectStarted = CONNECT_NOT_STARTED;
+                MyLog.debug(TAG, "Connect Second IF loop third part.");
             }
-        });
+        }else if (connectStarted == CONNECT_STARTED){
+            /**
+             * 已有一个连接过程正在进行
+             * 调用cancelConnect取消，然后再调用该过程
+             */
+            cancelConnect(channel);
+            connect(config);
+        }
+
     }
 
     /**
      * 在节点进行连接，但是还未连接成功的状态可以调用该函数取消连接
-     * 前提条件
+     * 前提条件开始连接但是还未成功的状态
      * @param channel
      */
     public void cancelConnect(WifiP2pManager.Channel channel){
-        manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
-            @Override
-            public void onSuccess() {
+        if (connectStarted == CONNECT_STARTED){
+            manager.cancelConnect(channel, new WifiP2pManager.ActionListener() {
+                @Override
+                public void onSuccess() {
+                    connectStarted = CONNECT_NOT_STARTED;
+                    device.setConnected(Device.NOT_CONNECTED);
+                    MyLog.debug(TAG, "Cancel Connect success.");
+                }
 
-            }
-
-            @Override
-            public void onFailure(int reason) {
-
-            }
-        });
+                @Override
+                public void onFailure(int reason) {
+                    MyLog.debug(TAG, "Cancel Connect failed.");
+                }
+            });
+        }else {
+            MyLog.debug(TAG, "Cancel Connect do nothing.");
+        }
     }
 
     /**
@@ -209,6 +326,7 @@ public class WiFiP2PService extends Service implements WifiP2pManager.ChannelLis
                 }
             });
         }else if (Device.NOT_CONNECTED == device.isConnected()){
+            MyLog.debug(TAG, "Disconnect do nothing.");
             //do nothing
         }else {
             MyLog.debug(TAG, "Disconnect third in if range.");
@@ -226,8 +344,39 @@ public class WiFiP2PService extends Service implements WifiP2pManager.ChannelLis
         return macAdd;
     }
 
+    /**
+     * 使用d来更新该类下的device
+     * @param d
+     * @return
+     */
     public boolean updateDevice(Device d){
         device.updateDevice(d);
         return true;
     }
+
+    /**
+     * 检查该mac地址的节点是否在该节点的邻居节点列表中
+     * @param macAdd
+     * @return
+     */
+    public boolean isInPeers(String macAdd){
+        int deviceID = Device.HashWithMAC(macAdd);
+        if (peersArrayList == null){
+            MyLog.debug(TAG, "isInPeers: NULL POINT ERROR");
+            return false;
+        }else {
+            if (!peersArrayList.isEmpty()){
+                for (Peers peers : peersArrayList){
+                    if (peers.getDeviceID() == deviceID){
+                        MyLog.debug(TAG, "isInPeers? YES");
+                        return true;
+                    }
+                }
+            }
+            MyLog.debug(TAG, "isInPeers? NO");
+            return false;
+        }
+    }
+
+
 }

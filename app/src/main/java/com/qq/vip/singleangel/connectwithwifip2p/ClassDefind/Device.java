@@ -22,7 +22,7 @@ public class Device implements Serializable{
      * 标志位，FLAG
      */
     private boolean isWiFiEnabled;  //Wifi是否开启
-    private boolean isDiscover;     //是否在发现状态
+    private boolean isDiscover;     //是否在发现状态，该标志位记录上一次发现的结果，具体可参考WifiP2PService
     private boolean isConnected;    //是否连接标志位
     private boolean isGroupOwner;   //是否是GO标志位
     private boolean isChannelDisconnected;  //信道断开
