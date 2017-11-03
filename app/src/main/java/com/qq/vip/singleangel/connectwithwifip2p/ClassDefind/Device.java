@@ -2,27 +2,41 @@ package com.qq.vip.singleangel.connectwithwifip2p.ClassDefind;
 
 import com.qq.vip.singleangel.connectwithwifip2p.DebugTool.MyLog;
 
+import java.io.Serializable;
 import java.util.Date;
 
 /**
  * Created by singl on 2017/11/1.
  * 节点在WIFI P2P中的信息
  */
-public class Device {
+public class Device implements Serializable{
 
     private final static String TAG = "Device";
 
     private int deviceID;           //设备的ID号
-    private boolean isConnected;    //是否连接标志位
-    private boolean isGroupOwner;   //是否是GO标志位
     private String deviceName;      //设备名字
     private String macAdd;          //设备MAC地址
     private String ipAdd;           //设备IP地址
+
+    /**
+     * 标志位，FLAG
+     */
+    private boolean isWiFiEnabled;  //Wifi是否开启
+    private boolean isDiscover;     //是否在发现状态
+    private boolean isConnected;    //是否连接标志位
+    private boolean isGroupOwner;   //是否是GO标志位
+    private boolean isChannelDisconnected;  //信道断开
 
     public final static boolean CONNECTED = true;
     public final static boolean NOT_CONNECTED = false;
     public final static boolean IS_GROUPOWNER = true;
     public final static boolean NOT_GROUPOWNER = false;
+    public final static boolean WIFI_ENABLED = true;
+    public final static boolean WIFI_DISABLED = false;
+    public final static boolean DISCOVERED = true;
+    public final static boolean NOT_DISCOVERED = false;
+    public final static boolean CHANNEL_CONNECTED = true;
+    public final static boolean CHANNEL_DISCONNECTED = false;
     public final static String NULL_STRING = "";
 
     /**
@@ -33,11 +47,14 @@ public class Device {
         if (checkHash(HashWithMAC(macAdd))){
             this.deviceID = HashWithMAC(macAdd);
         }
-        this.isConnected = NOT_CONNECTED;
-        this.isGroupOwner = NOT_GROUPOWNER;
         this.deviceName = NULL_STRING;
         this.macAdd = macAdd;
         this.ipAdd = NULL_STRING;
+        this.isConnected = NOT_CONNECTED;
+        this.isGroupOwner = NOT_GROUPOWNER;
+        this.isWiFiEnabled = WIFI_DISABLED;
+        this.isDiscover = NOT_DISCOVERED;
+        this.isChannelDisconnected = CHANNEL_DISCONNECTED;
     }
 
     /**
@@ -49,6 +66,7 @@ public class Device {
      * @param macAdd
      */
     public Device(int deviceID, boolean isConnected, boolean isGroupOwner,
+                  boolean isWiFiEnabled, boolean isDiscover, boolean isChannelDisconnected,
                   String deviceName, String macAdd){
         if (checkHash(HashWithMAC(macAdd))){
             this.deviceID = HashWithMAC(macAdd);
@@ -58,6 +76,9 @@ public class Device {
         this.deviceName = deviceName;
         this.macAdd = macAdd;
         this.ipAdd = NULL_STRING;
+        this.isWiFiEnabled = isWiFiEnabled;
+        this.isDiscover = isDiscover;
+        this.isChannelDisconnected = isChannelDisconnected;
     }
 
     /**
@@ -70,6 +91,7 @@ public class Device {
      * @param ipAdd
      */
     public Device(int deviceID, boolean isConnected, boolean isGroupOwner,
+                  boolean isWiFiEnabled, boolean isDiscover, boolean isChannelDisconnected,
                   String deviceName, String macAdd, String ipAdd){
         if (checkHash(HashWithMAC(macAdd))){
             this.deviceID = HashWithMAC(macAdd);
@@ -79,6 +101,9 @@ public class Device {
         this.deviceName = deviceName;
         this.macAdd = macAdd;
         this.ipAdd = ipAdd;
+        this.isWiFiEnabled = isWiFiEnabled;
+        this.isDiscover = isDiscover;
+        this.isChannelDisconnected = isChannelDisconnected;
     }
 
     /**
@@ -151,7 +176,15 @@ public class Device {
     public void setIpAdd(String ipAdd){
         this.ipAdd = ipAdd;
     }
-
+    public void setWifiEnabled(boolean isWiFiEnabled){
+        this.isWiFiEnabled = isWiFiEnabled;
+    }
+    public void setDiscover(boolean isDiscover){
+        this.isDiscover = isDiscover;
+    }
+    public void setChannelDisconnected(boolean isChannelDisconnected){
+        this.isChannelDisconnected = isChannelDisconnected;
+    }
     /**
      * 得到参数函数
      * @return
@@ -174,7 +207,33 @@ public class Device {
     public String getIpAdd(){
         return this.ipAdd;
     }
+    public boolean isWiFiEnabled(){
+        return this.isWiFiEnabled;
+    }
+    public boolean isDiscover(){
+        return this.isDiscover;
+    }
+    public boolean isChannelDisconnected(){
+        return this.isChannelDisconnected;
+    }
 
+    /**
+     * 使用Device对象来新建一个新的Device对象
+     * @param device
+     * @return
+     */
+    public boolean updateDevice(Device device){
+        setDeviceID(device.getMacAdd());
+        setConnected(device.isConnected());
+        setGroupOwner(device.isGroupOwner());
+        setDeviceName(device.getDeviceName());
+        setMacAdd(device.getMacAdd());
+        setIpAdd(device.getIpAdd());
+        setWifiEnabled(device.isWiFiEnabled());
+        setDiscover(device.isDiscover());
+        setChannelDisconnected(device.isChannelDisconnected());
+        return true;
+    }
 
 
 }

@@ -20,9 +20,14 @@ public class MyLog {
     private static final String LOG_FILE_URL = Environment.getExternalStorageDirectory() + "/"
             + "logfile"  + "/log" + ".txt";
     /**
-     * 构造函数，生成LOG文件保存LOG信息
+     * 构造函数 do nothing
      */
-    public MyLog(){
+    public MyLog(){}
+
+    /**
+     * 生成LOG文件保存LOG信息
+     */
+    public static void newMyLog(){
         File file = new File(LOG_FILE_URL);
         if (!file.exists()){ //该文件不存在
             boolean isSuccess = false;

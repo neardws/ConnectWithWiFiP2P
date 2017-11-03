@@ -1,12 +1,14 @@
 package com.qq.vip.singleangel.connectwithwifip2p.ClassDefind;
 
+import java.io.Serializable;
+
 /**
  * Information中主要保存着节点的位置和运动信息
  * 这些信息由节点的传感器获得
  * Created by singl on 2017/11/1.
  */
 
-public class Information {
+public class Information implements Serializable{
     private static final String TAG = "Information";
 
     private int deviceID;           //设备ID

@@ -1,11 +1,13 @@
 package com.qq.vip.singleangel.connectwithwifip2p.ClassDefind;
 
+import java.io.Serializable;
+
 /**
  * Created by singl on 2017/11/1.
  * 当前节点可以reach的节点，称为邻居节点
  */
 
-public class Peers {
+public class Peers implements Serializable{
     private int deviceID;    //邻居设备ID
     private int rssi;        //Wifi P2P的信号强度
     private float distance;  //节点间的相对距离
